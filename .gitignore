@@ -1,5 +1,9 @@
 node_modules/
 .env
+.env.local
+.env.production
+.aws/
 *.log
 .DS_Store
 coverage/
+tmp/

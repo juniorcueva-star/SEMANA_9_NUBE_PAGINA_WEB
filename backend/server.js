@@ -19,6 +19,7 @@ if (!bucket) {
 const s3 = new S3Client({ region });
 const app = express();
 const requestsByIp = new Map();
+const pendingUploads = new Map();
 app.disable('x-powered-by');
 app.use(express.json({ limit: '20kb' }));
 app.use(express.static(path.join(__dirname, '..', 'frontend')));
@@ -47,6 +48,10 @@ app.post('/api/upload-url', limitUploadRequests, async (req, res, next) => {
     const uploadUrl = await getSignedUrl(s3, new PutObjectCommand({
       Bucket: bucket, Key: key, ContentType: contentType
     }), { expiresIn: 300 });
+    pendingUploads.set(key, { contentType, sizeBytes: req.body.sizeBytes, createdAt: Date.now() });
+    for (const [oldKey, upload] of pendingUploads) {
+      if (Date.now() - upload.createdAt > 300_000) pendingUploads.delete(oldKey);
+    }
     res.json({ key, uploadUrl, expiresIn: 300 });
   } catch (error) { next(error); }
 });
@@ -54,16 +59,23 @@ app.post('/api/upload-url', limitUploadRequests, async (req, res, next) => {
 app.post('/api/complete', async (req, res, next) => {
   const { key } = req.body || {};
   if (!safeKey(key)) return res.status(400).json({ error: 'Clave de imagen inválida.' });
+  const pending = pendingUploads.get(key);
+  if (!pending || Date.now() - pending.createdAt > 300_000) {
+    pendingUploads.delete(key);
+    return res.status(400).json({ error: 'Esta carga no fue autorizada o ya venció.' });
+  }
   try {
     const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
     const extension = path.extname(key);
     const expectedType = Object.keys(EXTENSIONS).find(type => EXTENSIONS[type] === extension);
     const firstBytes = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key, Range: 'bytes=0-15' }));
     const signature = Buffer.from(await firstBytes.Body.transformToByteArray());
-    if (!head.ContentLength || head.ContentLength > MAX_FILE_BYTES || head.ContentType !== expectedType || !matchesMagicBytes(expectedType, signature)) {
+    if (!head.ContentLength || head.ContentLength !== pending.sizeBytes || head.ContentLength > MAX_FILE_BYTES || head.ContentType !== pending.contentType || head.ContentType !== expectedType || !matchesMagicBytes(expectedType, signature)) {
       await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+      pendingUploads.delete(key);
       return res.status(400).json({ error: 'La imagen subida no cumple el tamaño o formato permitido.' });
     }
+    pendingUploads.delete(key);
     res.json({ ok: true });
   } catch (error) { next(error); }
 });

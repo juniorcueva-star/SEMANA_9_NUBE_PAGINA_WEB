@@ -1,6 +1,6 @@
 # Ejercicio 4 — Aplicación web con Amazon S3
 
-**Fecha:** 14 de octubre de 2026  
+**Fecha:** 14 de octubre de 2026
 **Repositorio:** https://github.com/juniorcueva-star/SEMANA_9_NUBE_PAGINA_WEB
 
 ## Arquitectura
@@ -13,8 +13,10 @@ El navegador solicita a la API un enlace temporal de carga (5 minutos), envía l
 | --- | --- |
 | CORS para `http://localhost:3000` | `OPTIONS` respondió 200 con ese origen permitido. |
 | Carga de imagen válida desde el navegador | Imagen visible en la galería; pasó de 6 a 7 elementos. |
+| Confirmación sobre un objeto anterior | Rechazada con HTTP 400; el objeto original permaneció intacto. |
 | Selección de PDF desde el navegador | Rechazada con “solo JPG, PNG o WEBP”. |
 | Declaración de archivo de 10 MB a la API | Rechazada con HTTP 400. |
+| Once solicitudes de subida seguidas | Las primeras 10 respondieron 200; la última, 429. |
 | Enlace temporal de lectura de 1 segundo | Respondió 200 antes y 403 después del vencimiento. |
 | Credenciales en `frontend/` | No se encontraron claves AWS. |
 | Envío directo a S3 | `frontend/app.js` usa `fetch(uploadUrl, { method: 'PUT', body: file })`. |
