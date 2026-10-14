@@ -1,0 +1,17 @@
+{
+  "name": "semana-9-nube-pagina-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Galería privada de imágenes en Amazon S3 con enlaces temporales",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node --watch backend/server.js",
+    "test": "node --test backend/*.test.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.900.0",
+    "@aws-sdk/s3-request-presigner": "^3.900.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0"
+  }
+}
