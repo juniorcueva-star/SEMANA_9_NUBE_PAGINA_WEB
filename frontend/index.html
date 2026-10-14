@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#142c31">
+  <title>Atlas de imágenes · Laboratorio 09</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Atlas de imágenes, inicio"><span class="brand-mark">✦</span><span>ATLAS<span class="brand-dot">.</span></span></a>
+      <span class="topbar-caption">LABORATORIO 09 <span>·</span> AMAZON S3</span>
+      <span class="status"><span class="status-dot"></span> ALMACENAMIENTO PRIVADO</span>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="eyebrow-line"></span> TU ESPACIO DE IMÁGENES</p>
+          <h1 id="hero-title">Una galería para<br><em>todo tu universo.</em></h1>
+          <p class="hero-description">Guarda, explora y organiza tus imágenes en la nube. Cada enlace es temporal y tus archivos permanecen privados.</p>
+          <a class="hero-link" href="#coleccion">Explorar colección <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="hero-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="planet"></div><div class="star star-one">✦</div><div class="star star-two">✧</div><div class="star star-three">✦</div><span class="art-label">ARCHIVO / 09</span></div>
+      </section>
+
+      <section class="workspace" id="coleccion" aria-labelledby="collection-title">
+        <div class="section-heading">
+          <div><p class="section-index">01 / COLECCIÓN</p><h2 id="collection-title">Tus imágenes</h2><p class="section-subtitle">Un lugar para cada imagen que vale la pena conservar.</p></div>
+          <button class="refresh-button" id="refresh-button" type="button"><span aria-hidden="true">↻</span> Actualizar</button>
+        </div>
+
+        <div class="upload-panel" id="drop-zone">
+          <div class="upload-symbol" aria-hidden="true">↑</div>
+          <div class="upload-copy"><strong>Arrastra tus imágenes aquí</strong><span>o selecciona archivos desde tu equipo</span></div>
+          <label class="upload-button" for="file-input">Seleccionar archivos <span aria-hidden="true">＋</span></label>
+          <input id="file-input" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
+          <p class="upload-note">JPG, PNG o WEBP <span>·</span> Máximo 5 MB por imagen</p>
+        </div>
+
+        <div class="gallery-bar"><div><span class="gallery-count" id="gallery-count">—</span><span class="gallery-label">IMÁGENES EN LA GALERÍA</span></div><span class="gallery-order">Más recientes primero</span></div>
+        <div class="gallery" id="gallery" aria-live="polite"></div>
+        <div class="empty-state" id="empty-state" hidden><span aria-hidden="true">✧</span><h3>Aún no hay imágenes</h3><p>Sube la primera y comienza tu colección.</p></div>
+        <p class="message" id="message" role="status" hidden></p>
+      </section>
+    </main>
+    <footer><span>ATLAS. / LAB 09</span><span>HECHO PARA EXPLORAR <span aria-hidden="true">✦</span></span></footer>
+  </div>
+  <script src="/app.js" defer></script>
+</body>
+</html>
