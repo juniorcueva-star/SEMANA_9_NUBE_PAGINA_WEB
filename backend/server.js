@@ -38,8 +38,11 @@ function limitUploadRequests(req, res, next) {
 app.post('/api/upload-url', limitUploadRequests, async (req, res, next) => {
   const error = validateUpload(req.body);
   if (error) return res.status(400).json({ error });
-  const { contentType } = req.body;
-  const key = `originales/${crypto.randomUUID()}${EXTENSIONS[contentType]}`;
+  const { contentType, filename } = req.body;
+  const readableName = path.basename(filename).replace(/\.[^.]+$/, '')
+    .normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 60) || 'imagen';
+  const key = `originales/${crypto.randomUUID()}-${readableName}${EXTENSIONS[contentType]}`;
   try {
     const uploadUrl = await getSignedUrl(s3, new PutObjectCommand({
       Bucket: bucket, Key: key, ContentType: contentType
@@ -77,7 +80,7 @@ app.get('/api/images', async (_req, res, next) => {
       for (const item of page.Contents || []) {
         if (!item.Key || !/\.(jpe?g|png|webp)$/i.test(item.Key)) continue;
         const url = await getSignedUrl(s3, new GetObjectCommand({ Bucket: bucket, Key: item.Key }), { expiresIn: 900 });
-        images.push({ key: item.Key, name: path.posix.basename(item.Key), sizeBytes: item.Size || 0, uploadedAt: item.LastModified, url });
+        images.push({ key: item.Key, name: path.posix.basename(item.Key).replace(/^[a-f0-9-]{36}-/, ''), sizeBytes: item.Size || 0, uploadedAt: item.LastModified, url });
       }
       continuationToken = page.IsTruncated ? page.NextContinuationToken : undefined;
     } while (continuationToken);
