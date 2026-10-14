@@ -7,7 +7,7 @@ const {
   DeleteObjectCommand, ListObjectsV2Command
 } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-const { EXTENSIONS, MAX_FILE_BYTES, validateUpload, safeKey } = require('./validation');
+const { EXTENSIONS, MAX_FILE_BYTES, validateUpload, safeKey, matchesMagicBytes } = require('./validation');
 
 const bucket = process.env.S3_BUCKET;
 const region = process.env.AWS_REGION || 'us-east-1';
@@ -18,11 +18,24 @@ if (!bucket) {
 }
 const s3 = new S3Client({ region });
 const app = express();
+const requestsByIp = new Map();
 app.disable('x-powered-by');
 app.use(express.json({ limit: '20kb' }));
 app.use(express.static(path.join(__dirname, '..', 'frontend')));
 
-app.post('/api/upload-url', async (req, res, next) => {
+function limitUploadRequests(req, res, next) {
+  const now = Date.now();
+  const recent = (requestsByIp.get(req.ip) || []).filter(time => now - time < 60_000);
+  if (recent.length >= 10) return res.status(429).json({ error: 'Demasiadas subidas. Espera un minuto.' });
+  recent.push(now);
+  requestsByIp.set(req.ip, recent);
+  if (requestsByIp.size > 1000) {
+    for (const [ip, times] of requestsByIp) if (times.every(time => now - time >= 60_000)) requestsByIp.delete(ip);
+  }
+  next();
+}
+
+app.post('/api/upload-url', limitUploadRequests, async (req, res, next) => {
   const error = validateUpload(req.body);
   if (error) return res.status(400).json({ error });
   const { contentType } = req.body;
@@ -42,7 +55,9 @@ app.post('/api/complete', async (req, res, next) => {
     const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
     const extension = path.extname(key);
     const expectedType = Object.keys(EXTENSIONS).find(type => EXTENSIONS[type] === extension);
-    if (!head.ContentLength || head.ContentLength > MAX_FILE_BYTES || head.ContentType !== expectedType) {
+    const firstBytes = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key, Range: 'bytes=0-15' }));
+    const signature = Buffer.from(await firstBytes.Body.transformToByteArray());
+    if (!head.ContentLength || head.ContentLength > MAX_FILE_BYTES || head.ContentType !== expectedType || !matchesMagicBytes(expectedType, signature)) {
       await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
       return res.status(400).json({ error: 'La imagen subida no cumple el tamaño o formato permitido.' });
     }

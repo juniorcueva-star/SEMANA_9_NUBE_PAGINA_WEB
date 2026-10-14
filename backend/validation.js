@@ -12,7 +12,14 @@ function validateUpload(input) {
 }
 
 function safeKey(key) {
-  return typeof key === 'string' && /^originales\/[a-f0-9-]{36}\.(jpg|png|webp)$/.test(key);
+  return typeof key === 'string' && /^originales\/[^/\\.][^/\\]*\.(jpe?g|png|webp)$/i.test(key);
 }
 
-module.exports = { MAX_FILE_BYTES, MIME_TYPES, EXTENSIONS, validateUpload, safeKey };
+function matchesMagicBytes(type, bytes) {
+  if (type === 'image/png') return bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  if (type === 'image/jpeg') return bytes.length >= 3 && bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
+  if (type === 'image/webp') return bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP';
+  return false;
+}
+
+module.exports = { MAX_FILE_BYTES, MIME_TYPES, EXTENSIONS, validateUpload, safeKey, matchesMagicBytes };

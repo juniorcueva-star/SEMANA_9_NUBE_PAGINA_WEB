@@ -24,6 +24,14 @@ async function jsonResponse(response) {
 
 function formatSize(bytes) { return `${(bytes / 1024).toFixed(1)} KB`; }
 
+async function detectImageType(file) {
+  const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+  if (bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255) return 'image/jpeg';
+  if ([137, 80, 78, 71, 13, 10, 26, 10].every((value, i) => bytes[i] === value)) return 'image/png';
+  if (String.fromCharCode(...bytes.slice(0, 4)) === 'RIFF' && String.fromCharCode(...bytes.slice(8, 12)) === 'WEBP') return 'image/webp';
+  return null;
+}
+
 function renderImages(images) {
   gallery.replaceChildren();
   count.textContent = images.length;
@@ -39,7 +47,7 @@ function renderImages(images) {
     const sizeEl = document.createElement('span'); sizeEl.textContent = formatSize(image.sizeBytes);
     meta.append(dateEl, sizeEl);
     body.append(title, meta);
-    if (/^originales\/[a-f0-9-]{36}\.(jpg|png|webp)$/.test(image.key)) {
+    if (/^originales\/[^/\\.][^/\\]*\.(jpe?g|png|webp)$/i.test(image.key)) {
       const actions = document.createElement('div'); actions.className = 'card-actions';
       const remove = document.createElement('button'); remove.className = 'delete-button'; remove.type = 'button'; remove.textContent = 'Eliminar imagen';
       remove.addEventListener('click', () => deleteImage(image.key));
@@ -59,11 +67,13 @@ async function loadImages() {
 async function uploadFile(file) {
   if (!allowedTypes.has(file.type)) throw new Error(`${file.name}: solo JPG, PNG o WEBP.`);
   if (!file.size || file.size > maxBytes) throw new Error(`${file.name}: el límite es 5 MB.`);
+  const actualType = await detectImageType(file);
+  if (!actualType) throw new Error(`${file.name}: el archivo no contiene una imagen válida.`);
   const { uploadUrl, key } = await jsonResponse(await fetch('/api/upload-url', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ filename: file.name, contentType: file.type, sizeBytes: file.size })
+    body: JSON.stringify({ filename: file.name, contentType: actualType, sizeBytes: file.size })
   }));
-  const uploaded = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+  const uploaded = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': actualType }, body: file });
   if (!uploaded.ok) throw new Error(`${file.name}: S3 rechazó la subida. Revisa la configuración CORS del bucket.`);
   await jsonResponse(await fetch('/api/complete', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key })

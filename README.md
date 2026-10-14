@@ -39,10 +39,10 @@ Guardar. Si se usa otro puerto o dominio, agregar ese origen exacto. El bucket d
 
 ## Uso y comprobaciones
 
-1. Seleccionar o arrastrar una imagen JPG, PNG o WEBP de hasta 5 MB.
+1. Seleccionar o arrastrar una imagen JPG, PNG o WEBP de hasta 5 MB. La página detecta el formato real, incluso si la extensión del archivo no coincide.
 2. Comprobar que aparece en la galería. En las herramientas de red del navegador se verá `PUT` directamente a S3.
 3. Probar un PDF y una imagen de más de 5 MB: deben rechazarse.
-4. El botón **Eliminar imagen** borra imágenes subidas desde esta página. Las imágenes anteriores del laboratorio se muestran, pero se protegen contra borrado accidental desde la interfaz.
+4. El botón **Eliminar imagen** borra las imágenes de la carpeta `originales/`, incluidas las subidas previamente en el laboratorio. S3 conserva versiones anteriores cuando el versionado está activado.
 5. Ejecutar `npm test` para comprobar las validaciones.
 
 Las URL de subida caducan a los 5 minutos. Las URL de lectura caducan a los 15 minutos; **Actualizar** genera enlaces nuevos. Con el versionado de S3, borrar un objeto crea un marcador de borrado y permite recuperación desde la consola.
@@ -56,4 +56,4 @@ Las URL de subida caducan a los 5 minutos. Las URL de lectura caducan a los 15 m
 
 ## Nota de seguridad
 
-El servidor está pensado para una práctica local. Antes de publicarlo en Internet se necesita autenticación, límites de uso y controles de autorización por usuario. La URL temporal de PUT valida el tipo declarado, pero S3 no restringe por sí solo los bytes reales; `/api/complete` verifica tamaño y tipo después de la subida. No subir `.env` ni credenciales al repositorio.
+El servidor está pensado para una práctica local. Antes de publicarlo en Internet se necesita autenticación y controles de autorización por usuario. La API limita a 10 solicitudes de subida por minuto y dirección IP. La URL temporal de PUT valida el tipo declarado, pero S3 no restringe por sí solo los bytes reales; `/api/complete` verifica tamaño, tipo y firma inicial después de la subida. Para producción también se recomienda analizar las imágenes con antivirus antes de mostrarlas. No subir `.env` ni credenciales al repositorio.
