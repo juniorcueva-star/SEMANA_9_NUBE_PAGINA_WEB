@@ -17,11 +17,11 @@ El navegador solicita a la API un enlace temporal de carga (5 minutos), envía l
 | Selección de PDF desde el navegador | Rechazada con “solo JPG, PNG o WEBP”. |
 | Declaración de archivo de 10 MB a la API | Rechazada con HTTP 400. |
 | Once solicitudes de subida seguidas | Las primeras 10 respondieron 200; la última, 429. |
-| Enlace temporal de lectura de 1 segundo | Respondió 200 antes y 403 después del vencimiento. |
+| Enlace temporal de lectura de 15 minutos | Respondió 200 al inicio y 403 después de 16 minutos. |
 | Credenciales en `frontend/` | No se encontraron claves AWS. |
 | Envío directo a S3 | `frontend/app.js` usa `fetch(uploadUrl, { method: 'PUT', body: file })`. |
 
-**Comprobación de 16 minutos:** pendiente de finalizar la espera de la URL de lectura de 15 minutos.
+**Comprobación de 16 minutos:** iniciada a las 19:13:29 UTC; respuesta 403 a las 19:29:30 UTC con la misma URL.
 
 ## Respuestas de análisis
 
